@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:fl_chart/fl_chart.dart';
 import '../providers/bluetooth_provider.dart';
+import 'calibration_screen.dart';
 
 class MonitoringScreen extends StatefulWidget {
   const MonitoringScreen({Key? key}) : super(key: key);
@@ -14,7 +14,6 @@ class _MonitoringScreenState extends State<MonitoringScreen> {
   @override
   void initState() {
     super.initState();
-    // Simulate data updates
     _simulateDataUpdates();
   }
 
@@ -37,135 +36,209 @@ class _MonitoringScreenState extends State<MonitoringScreen> {
       builder: (context, bluetoothProvider, _) {
         final data = bluetoothProvider.latestData;
 
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Device Info Card
-              Card(
-                child: Padding(
+        return Scaffold(
+          body: SingleChildScrollView(
+            child: Column(
+              children: [
+                // Device Info Header
+                Container(
+                  width: double.infinity,
                   padding: const EdgeInsets.all(16),
+                  color: Colors.white,
+                  margin: const EdgeInsets.only(bottom: 16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      const Text(
                         'Connected Device',
-                        style: Theme.of(context).textTheme.titleMedium,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 4),
                       Text(
                         bluetoothProvider.connectedDevice?.name ?? 'Unknown',
-                        style: Theme.of(context).textTheme.headlineSmall,
-                      ),
-                      Text(
-                        bluetoothProvider.connectedDevice?.id ?? '',
-                        style: Theme.of(context).textTheme.bodySmall,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
 
-              // Battery Level
-              _buildMetricCard(
-                context,
-                'Battery Level',
-                '${data?.batteryLevel.toStringAsFixed(1) ?? '--'}%',
-                data?.batteryLevel ?? 0,
-              ),
-              const SizedBox(height: 16),
+                // Main Data Display
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    children: [
+                      // Steps (Largest)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          border: Border.all(color: Colors.grey[300]!),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Column(
+                          children: [
+                            Text(
+                              '${data?.stepCount ?? 0}',
+                              style: const TextStyle(
+                                fontSize: 48,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Steps',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
 
-              // Microcontroller Voltage
-              _buildMetricCard(
-                context,
-                'Microcontroller Voltage',
-                '${data?.voltage.toStringAsFixed(2) ?? '--'} V',
-                (data?.voltage ?? 0) / 5 * 100, // Normalize to percentage for visualization
-              ),
-              const SizedBox(height: 16),
+                      // Battery and Voltage Row
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildMetricCard(
+                              '${data?.batteryLevel.toStringAsFixed(0) ?? '--'}%',
+                              'Battery',
+                              data?.batteryLevel ?? 0,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildMetricCard(
+                              '${data?.voltage.toStringAsFixed(1) ?? '--'} V',
+                              'Voltage',
+                              (data?.voltage ?? 0) / 5 * 100,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
 
-              // Step Counter
-              Card(
-                child: Padding(
+                      // Timestamp
+                      Text(
+                        data?.timestamp != null
+                            ? 'Updated: ${data!.timestamp.toString().split('.')[0]}'
+                            : 'No data',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Controls Section
+                Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      const Divider(),
+                      const SizedBox(height: 16),
                       Text(
-                        'Step Counter',
-                        style: Theme.of(context).textTheme.titleMedium,
+                        'Device Control',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '${data?.stepCount ?? 0} steps',
-                        style: Theme.of(context).textTheme.displaySmall,
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: bluetoothProvider.isDeviceOn
+                                  ? () =>
+                                      bluetoothProvider.toggleDevice(false)
+                                  : null,
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.red,
+                                disabledForegroundColor: Colors.grey[400],
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 12),
+                              ),
+                              child: const Text('Power Off'),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: !bluetoothProvider.isDeviceOn
+                                  ? () =>
+                                      bluetoothProvider.toggleDevice(true)
+                                  : null,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green,
+                                foregroundColor: Colors.white,
+                                disabledBackgroundColor: Colors.grey[300],
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 12),
+                              ),
+                              child: const Text('Power On'),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Last updated: ${data?.timestamp.toString().split('.')[0] ?? '--'}',
-                        style: Theme.of(context).textTheme.bodySmall,
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const CalibrationScreen(),
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                          child: const Text('Calibration'),
+                        ),
                       ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton(
+                          onPressed: () async {
+                            await bluetoothProvider.disconnectFromDevice();
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Disconnected'),
+                                  duration: Duration(seconds: 1),
+                                ),
+                              );
+                            }
+                          },
+                          child: const Text('Disconnect'),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
                     ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 24),
-
-              // Power Control Section
-              Text(
-                'Device Control',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  ElevatedButton.icon(
-                    onPressed: bluetoothProvider.isDeviceOn
-                        ? () => bluetoothProvider.toggleDevice(false)
-                        : null,
-                    icon: const Icon(Icons.power_settings_new),
-                    label: const Text('Turn Off'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      foregroundColor: Colors.white,
-                    ),
-                  ),
-                  ElevatedButton.icon(
-                    onPressed: !bluetoothProvider.isDeviceOn
-                        ? () => bluetoothProvider.toggleDevice(true)
-                        : null,
-                    icon: const Icon(Icons.power_settings_new),
-                    label: const Text('Turn On'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      foregroundColor: Colors.white,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-
-              // Disconnect Button
-              ElevatedButton.icon(
-                onPressed: () async {
-                  await bluetoothProvider.disconnectFromDevice();
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Disconnected')),
-                    );
-                  }
-                },
-                icon: const Icon(Icons.bluetooth_disabled),
-                label: const Text('Disconnect'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.grey,
-                  foregroundColor: Colors.white,
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
@@ -173,36 +246,47 @@ class _MonitoringScreenState extends State<MonitoringScreen> {
   }
 
   Widget _buildMetricCard(
-    BuildContext context,
-    String label,
     String value,
+    String label,
     double percentage,
   ) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: Theme.of(context).textTheme.titleMedium,
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: Colors.grey[300]!),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
             ),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: Theme.of(context).textTheme.headlineSmall,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey[600],
             ),
-            const SizedBox(height: 12),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: LinearProgressIndicator(
-                value: percentage / 100,
-                minHeight: 8,
-              ),
+          ),
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: percentage / 100,
+              minHeight: 4,
+              backgroundColor: Colors.grey[300],
+              valueColor:
+                  AlwaysStoppedAnimation<Color>(Colors.grey[700]!),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

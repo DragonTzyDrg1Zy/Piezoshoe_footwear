@@ -21,6 +21,12 @@ class MyApp extends StatelessWidget {
         theme: ThemeData(
           primarySwatch: Colors.blue,
           useMaterial3: true,
+          scaffoldBackgroundColor: const Color(0xFFFFE8F0), // Light pink background
+          appBarTheme: const AppBarTheme(
+            backgroundColor: Color(0xFFFFE8F0),
+            elevation: 0,
+            foregroundColor: Colors.black,
+          ),
         ),
         home: const HomeScreen(),
       ),

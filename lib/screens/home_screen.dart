@@ -24,17 +24,14 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Piezoshoe Footwear Monitor'),
+        title: const Text('Piezoshoe Monitor'),
         elevation: 0,
       ),
       body: Consumer<BluetoothProvider>(
         builder: (context, bluetoothProvider, _) {
-          // If device is connected, show monitoring screen
           if (bluetoothProvider.connectedDevice != null) {
             return const MonitoringScreen();
           }
-          
-          // Otherwise show device list
           return const DeviceListScreen();
         },
       ),
