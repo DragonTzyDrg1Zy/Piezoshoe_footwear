@@ -1,4 +1,4 @@
-name: Build APK
+  name: Build APK
 
 on:
   push:
@@ -24,12 +24,6 @@ jobs:
       
       - name: Get dependencies
         run: flutter pub get
-      
-      - name: Fix Gradle
-        run: |
-          cd android
-          ./gradlew clean
-          cd ..
       
       - name: Build APK
         run: flutter build apk --release
