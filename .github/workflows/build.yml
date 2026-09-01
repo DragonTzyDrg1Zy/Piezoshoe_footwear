@@ -25,8 +25,8 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
       
-      - name: Fix Gradle
-        run: flutter clean && flutter pub get
+      - name: Regenerate Android
+        run: flutter create . --platforms android
       
       - name: Build APK
         run: flutter build apk --release
